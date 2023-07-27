@@ -8,9 +8,26 @@ import time
 import plotly
 import plotly.graph_objects as go
 import json
+import multiprocessing
+from subprocess import Popen, PIPE
 
 app = Flask(__name__)
 socketio = SocketIO(app)
+
+def run_facefacefacefaceface():
+    # fumifumi.pyを別プロセスとして実行
+    process = Popen(['python', 'facefacefacefaceface.py'], stdout=PIPE, text=True)
+    
+    while True:
+        # fumifumi.pyからの出力をリアルタイムに受け取る
+        output = process.stdout.readline().strip()
+        if output:
+            print("Received real-time value:", output)
+
+if __name__ == "__main__":
+    # fumifumi.pyの実行と結果の受け取りを開始
+    multiprocessing.Process(target=run_facefacefacefaceface).start()
+
 
 def generate_emotion_data():
     # 仮の感情データを生成してWebSocketを介してクライアントに送信する

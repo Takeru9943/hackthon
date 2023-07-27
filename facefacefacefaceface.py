@@ -7,7 +7,7 @@ import cv2
 import time
 
 # ②動画ファイルの読み込み
-video_path = "/Users/fumi/PycharmProjects/pythonProject/multimodal/a2g1n-20lik.mp4"  # 読み込ませたい動画ファイルを入力する
+video_path = "/Users/kurokawatakeru/Github/hackthon/test.mp4" # 読み込ませたい動画ファイルを入力する
 cap = cv2.VideoCapture(video_path)
 
 # ③フレームごとに動画を読み込み、画像として表情分析を行う
