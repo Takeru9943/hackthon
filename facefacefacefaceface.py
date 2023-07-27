@@ -6,7 +6,7 @@ import pprint
 import cv2
 
 # 動画ファイルのパスを指定する
-video_path = "/Users/fumi/PycharmProjects/pythonProject/multimodal/a2g1n-20lik.mp4"  # 自分の動画ファイルのパスに変更してください
+video_path = "/Users/kurokawatakeru/Github/hackthon/test.mp4" # 自分の動画ファイルのパスに変更してください
 cap = cv2.VideoCapture(video_path)
 
 # 表情認識用のAPI情報を設定する

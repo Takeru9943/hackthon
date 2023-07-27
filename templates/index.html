@@ -3,43 +3,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>感情推定結果リアルタイム表示</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <title>動画アップロード</title>
 </head>
 <body>
-  <h1>感情推定結果リアルタイム表示</h1>
-  <div id="emotionResults">
-    <!-- 結果を表示する部分 -->
-  </div>
-  <div id="graphContainer">
-    <!-- グラフを表示する部分 -->
-  </div>
+  <h1>動画をアップロードしてください</h1>
+  <form id="videoForm" method="POST" enctype="multipart/form-data">
+    <input type="file" name="video" accept="video/*">
+    <input type="submit" value="動画をアップロード">
+  </form>
 
   <script>
-    // サーバーとWebSocketで接続
-    const socket = io.connect('http://' + document.domain + ':' + location.port);
+    document.getElementById('videoForm').onsubmit = function(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
 
-    // WebSocketで感情データを受信して表示
-    socket.on('update_emotion', function(data) {
-      const emotions = data.emotions;
-      const emotion_percentages = data.emotion_percentages;
-
-      // 結果を表示する部分のHTMLを更新
-      let html = '';
-      for (let i = 0; i < emotions.length; i++) {
-        html += '<p>' + emotions[i] + ': ' + emotion_percentages[i].toFixed(2) + '</p>';
-      }
-      document.getElementById('emotionResults').innerHTML = html;
-    });
-
-    // WebSocketでグラフデータを受信して表示
-    socket.on('update_graph', function(graph_json) {
-      const graphData = JSON.parse(graph_json);
-
-      // グラフを描画
-      Plotly.newPlot('graphContainer', graphData.data, graphData.layout);
-    });
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        window.location.href = '/analyze';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    };
   </script>
 </body>
 </html>
