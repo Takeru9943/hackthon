@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Bar Chart</title>
+    <!-- Chart.jsのスクリプトを読み込む -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="barChart" width="400" height="200"></canvas>
+    <script>
+        // データセットの初期値
+        let dataPoints = [10, 20, 30, 40, 50];
+        
+        // Chart.jsの設定オプション
+        const options = {
+            responsive: true,
+            scales: {
+                x: {
+                    beginAtZero: true
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        };
+        
+        // 棒グラフの初期化
+        const ctx = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['A', 'B', 'C', 'D', 'E'],
+                datasets: [{
+                    label: 'Real-time Data',
+                    data: dataPoints,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: options
+        });
+        
+        // データ更新関数（例としてランダムな値を生成）
+        function updateData() {
+            dataPoints = dataPoints.map(() => Math.random() * 100);
+            barChart.data.datasets[0].data = dataPoints;
+            barChart.update();
+        }
+        
+        // 1秒ごとにデータを更新
+        setInterval(updateData, 1000);
+    </script>
+</body>
+</html>
