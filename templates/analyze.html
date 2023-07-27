@@ -1,0 +1,34 @@
+<!-- analyze.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>解析中...</title>
+</head>
+<body>
+  <h1>解析中...</h1>
+  <div id="emotionResults">
+    <!-- 解析結果を表示する部分 -->
+  </div>
+
+  <script>
+    function getEmotionData() {
+      fetch('/get_emotion_data')
+      .then(response => response.json())
+      .then(data => {
+        const emotionData = data.emotion_data;
+        document.getElementById('emotionResults').innerText = emotionData;
+
+        if (emotionData === 'Complete') {
+          clearInterval(interval);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    const interval = setInterval(getEmotionData, 1000);
+  </script>
+</body>
+</html>
