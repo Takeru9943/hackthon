@@ -1,9 +1,12 @@
+from flask import Flask, render_template, request
 import requests
 import base64
 import json
 import pprint
 import cv2
 import os
+
+app = Flask(__name__)
 
 # 表情認識用のAPI情報を設定する
 endpoint = 'https://api-us.faceplusplus.com'
