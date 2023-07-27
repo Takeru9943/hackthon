@@ -1,16 +1,19 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>動画アップロード</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <title>Interview Checker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>動画をアップロードしてください</h1>
+  <h1 class="title">Interview Checker</h1>
+  <h2 class="subtitle">Please upload your video!!</h2>
+  
   <form id="videoForm" method="POST" enctype="multipart/form-data">
     <input type="file" name="video" accept="video/*">
-    <input type="submit" value="動画をアップロード">
+    <input type="submit" value="Upload">
   </form>
 
   <script>
