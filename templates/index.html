@@ -17,11 +17,12 @@
     <h1 class="title">Interview Checker</h1>
   </div>
   <div class="content">
-    <h2 class="subtitle">Please upload your video!!</h2>
-    <form method="POST" enctype="multipart/form-data">
+    <h2 class="subtitle" id="upload-status">Please upload your video!!</h2>
+    <form method="POST" enctype="multipart/form-data" onsubmit="changeStatus()">
       <input type="file" name="file">
       <input type="submit" value="Upload">
     </form>
   </div>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
