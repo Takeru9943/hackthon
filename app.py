@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
 import base64
 import json
@@ -31,109 +31,148 @@ def index():
 
             # 動画ファイルのパスを指定する
             video_path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename)
-            cap = cv2.VideoCapture(video_path)
 
-            # 動画のフレーム数を取得する
-            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            # フレームレートを取得する
-            fps = int(cap.get(cv2.CAP_PROP_FPS))
-
-            # 変数を初期化する
-            max_happiness = 0
-            min_happiness = 100  # 初期値を大きな値に設定
-            max_neutral = 0
-            min_neutral = 100  # 初期値を大きな値に設定
-            max_sadness = 0
-            min_sadness = 100  # 初期値を大きな値に設定
-
-            # 感情の最大・最小値を取得したタイミング（t）を記録する変数
-            t_max_happiness = 0
-            t_min_happiness = 0
-            t_max_neutral = 0
-            t_min_neutral = 0
-            t_max_sadness = 0
-            t_min_sadness = 0
-
-            # 0.5秒ごとに表情認識を行い、動画を全て認識するループ
-            seconds_passed = 0
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                # 画像をAPIに送る
-                _, img_encoded = cv2.imencode('.jpg', frame)
-                img_base64 = base64.b64encode(img_encoded).decode('utf-8')
-                response = requests.post(
-                    endpoint + '/facepp/v3/detect',
-                    {
-                        'api_key': api_key,
-                        'api_secret': api_secret,
-                        'image_base64': img_base64,
-                        'return_attributes': 'emotion'
-                    }
-                )
-
-                # リクエストに対して返ってきた結果を取得する
-                json_dict = json.loads(response.text)
-                if 'faces' in json_dict:
-                    if len(json_dict['faces']) > 0:
-                        emotions = json_dict['faces'][0]['attributes']['emotion']
-
-                        # 最大値と最小値を保持する
-                        if emotions['happiness'] > max_happiness:
-                            max_happiness = emotions['happiness']
-                            t_max_happiness = seconds_passed + 0.5
-
-                        if emotions['happiness'] < min_happiness:
-                            min_happiness = emotions['happiness']
-                            t_min_happiness = seconds_passed + 0.5
-
-                        if emotions['neutral'] > max_neutral:
-                            max_neutral = emotions['neutral']
-                            t_max_neutral = seconds_passed + 0.5
-
-                        if emotions['neutral'] < min_neutral:
-                            min_neutral = emotions['neutral']
-                            t_min_neutral = seconds_passed + 0.5
-
-                        if emotions['sadness'] > max_sadness:
-                            max_sadness = emotions['sadness']
-                            t_max_sadness = seconds_passed + 0.5
-
-                        if emotions['sadness'] < min_sadness:
-                            min_sadness = emotions['sadness']
-                            t_min_sadness = seconds_passed + 0.5
-
-                # 0.5秒待機する
-                cv2.waitKey(500)
-
-                # 経過時間を更新
-                seconds_passed += 0.5
-
-                # 動画を全て認識したらループを抜ける
-                if seconds_passed >= frame_count / fps:
-                    break
-
-                # 最大値と最小値を表示する
-                print("Max Happiness:", max_happiness, "t =", t_max_happiness)
-                print("Min Happiness:", min_happiness, "t =", t_min_happiness)
-                print("Max Neutral:", max_neutral, "t =", t_max_neutral)
-                print("Min Neutral:", min_neutral, "t =", t_min_neutral)
-                print("Max Sadness:", max_sadness, "t =", t_max_sadness)
-                print("Min Sadness:", min_sadness, "t =", t_min_sadness)
-
-
-            # 後処理としてキャプチャをリリースする
-            cap.release()
-            cv2.destroyAllWindows()
-
-            # Webページに表示するために、最大値とその時間を返す
-            return render_template('index.html', max_happiness=max_happiness, t_max_happiness=t_max_happiness)
+            # analyze.htmlにリダイレクトする
+            return redirect(url_for('analyze', video_path=video_path))
 
     # GETリクエストの場合やファイルが選択されていない場合は、ファイルアップロードフォームを表示する
     return render_template('index.html')
+
+
+@app.route('/analyze', methods=['GET'])
+def analyze():
+    video_path = request.args.get('video_path')
+
+    # 解析処理を開始する
+    # 動画の解析と結果の取得
+    # 変数を初期化する
+    max_happiness = 0
+    min_happiness = 100  # 初期値を大きな値に設定
+    max_neutral = 0
+    min_neutral = 100  # 初期値を大きな値に設定
+    max_sadness = 0
+    min_sadness = 100  # 初期値を大きな値に設定
+
+    # 感情の最大・最小値を取得したタイミング（t）を記録する変数
+    t_max_happiness = 0
+    t_min_happiness = 0
+    t_max_neutral = 0
+    t_min_neutral = 0
+    t_max_sadness = 0
+    t_min_sadness = 0
+
+    # 0.5秒ごとに表情認識を行い、動画を全て認識するループ
+    cap = cv2.VideoCapture(video_path)
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    seconds_passed = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # 画像をAPIに送る
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        img_base64 = base64.b64encode(img_encoded).decode('utf-8')
+        response = requests.post(
+            endpoint + '/facepp/v3/detect',
+            {
+                'api_key': api_key,
+                'api_secret': api_secret,
+                'image_base64': img_base64,
+                'return_attributes': 'emotion'
+            }
+        )
+
+        # リクエストに対して返ってきた結果を取得する
+        json_dict = json.loads(response.text)
+        if 'faces' in json_dict:
+            if len(json_dict['faces']) > 0:
+                emotions = json_dict['faces'][0]['attributes']['emotion']
+
+                # 最大値と最小値を保持する
+                if emotions['happiness'] > max_happiness:
+                    max_happiness = emotions['happiness']
+                    t_max_happiness = seconds_passed + 0.5
+
+                if emotions['happiness'] < min_happiness:
+                    min_happiness = emotions['happiness']
+                    t_min_happiness = seconds_passed + 0.5
+
+                if emotions['neutral'] > max_neutral:
+                    max_neutral = emotions['neutral']
+                    t_max_neutral = seconds_passed + 0.5
+
+                if emotions['neutral'] < min_neutral:
+                    min_neutral = emotions['neutral']
+                    t_min_neutral = seconds_passed + 0.5
+
+                if emotions['sadness'] > max_sadness:
+                    max_sadness = emotions['sadness']
+                    t_max_sadness = seconds_passed + 0.5
+
+                if emotions['sadness'] < min_sadness:
+                    min_sadness = emotions['sadness']
+                    t_min_sadness = seconds_passed + 0.5
+
+        # 0.5秒待機する
+        cv2.waitKey(500)
+
+        # 経過時間を更新
+        seconds_passed += 0.5
+
+        # 動画を全て認識したらループを抜ける
+        if seconds_passed >= cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps:
+            break
+
+    # 後処理としてキャプチャをリリースする
+    cap.release()
+    cv2.destroyAllWindows()
+
+    # 解析完了後にresult.htmlにリダイレクトする
+    return redirect(url_for('result',
+                            max_happiness=max_happiness,
+                            t_max_happiness=t_max_happiness,
+                            min_happiness=min_happiness,
+                            t_min_happiness=t_min_happiness,
+                            max_neutral=max_neutral,
+                            t_max_neutral=t_max_neutral,
+                            min_neutral=min_neutral,
+                            t_min_neutral=t_min_neutral,
+                            max_sadness=max_sadness,
+                            t_max_sadness=t_max_sadness,
+                            min_sadness=min_sadness,
+                            t_min_sadness=t_min_sadness))
+
+@app.route('/result', methods=['GET'])
+def result():
+    # 解析結果を受け取る（analyze.htmlからリダイレクトされるときに値を渡す）
+    max_happiness = request.args.get('max_happiness')
+    t_max_happiness = request.args.get('t_max_happiness')
+    min_happiness = request.args.get('min_happiness')
+    t_min_happiness = request.args.get('t_min_happiness')
+    max_neutral = request.args.get('max_neutral')
+    t_max_neutral = request.args.get('t_max_neutral')
+    min_neutral = request.args.get('min_neutral')
+    t_min_neutral = request.args.get('t_min_neutral')
+    max_sadness = request.args.get('max_sadness')
+    t_max_sadness = request.args.get('t_max_sadness')
+    min_sadness = request.args.get('min_sadness')
+    t_min_sadness = request.args.get('t_min_sadness')
+
+    # result.htmlに解析結果を表示する
+    return render_template('result.html',
+                           max_happiness=max_happiness,
+                           t_max_happiness=t_max_happiness,
+                           min_happiness=min_happiness,
+                           t_min_happiness=t_min_happiness,
+                           max_neutral=max_neutral,
+                           t_max_neutral=t_max_neutral,
+                           min_neutral=min_neutral,
+                           t_min_neutral=t_min_neutral,
+                           max_sadness=max_sadness,
+                           t_max_sadness=t_max_sadness,
+                           min_sadness=min_sadness,
+                           t_min_sadness=t_min_sadness)
 
 if __name__ == '__main__':
     app.run()
