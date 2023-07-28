@@ -19,7 +19,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 # フレームを保存するディレクトリのパス
-FRAMES_FOLDER = './frames'
+FRAMES_FOLDER = './static/frames'
 if not os.path.exists(FRAMES_FOLDER):
     os.makedirs(FRAMES_FOLDER)
 
@@ -155,7 +155,7 @@ def analyze():
                             t_max_happiness=t_max_happiness,
                             min_happiness=min_happiness,
                             t_min_happiness=t_min_happiness,
-                                                       max_neutral=max_neutral,
+                            max_neutral=max_neutral,
                             t_max_neutral=t_max_neutral,
                             min_neutral=min_neutral,
                             t_min_neutral=t_min_neutral,
@@ -169,39 +169,30 @@ def result():
     # 解析結果を受け取る（analyze.htmlからリダイレクトされるときに値を渡す）
     max_happiness = request.args.get('max_happiness')
     t_max_happiness = request.args.get('t_max_happiness')
-    min_happiness = request.args.get('min_happiness')
-    t_min_happiness = request.args.get('t_min_happiness')
-    max_neutral = request.args.get('max_neutral')
-    t_max_neutral = request.args.get('t_max_neutral')
-    min_neutral = request.args.get('min_neutral')
-    t_min_neutral = request.args.get('t_min_neutral')
     max_sadness = request.args.get('max_sadness')
     t_max_sadness = request.args.get('t_max_sadness')
-    min_sadness = request.args.get('min_sadness')
-    t_min_sadness = request.args.get('t_min_sadness')
+
+    # 以下を追加：t_max_happinessとt_min_happinessに格納された文字列をフレームフォルダで探す
+    max_happiness_image_path = find_image_path(t_max_happiness)
+    max_sadness_image_path = find_image_path(t_max_sadness)
 
     # result.htmlに解析結果を表示する
     return render_template('result.html',
                            max_happiness=max_happiness,
                            t_max_happiness=t_max_happiness,
-                           min_happiness=min_happiness,
-                           t_min_happiness=t_min_happiness,
-                           max_neutral=max_neutral,
-                           t_max_neutral=t_max_neutral,
-                           min_neutral=min_neutral,
-                           t_min_neutral=t_min_neutral,
+                           max_happiness_image_path=max_happiness_image_path,
                            max_sadness=max_sadness,
                            t_max_sadness=t_max_sadness,
-                           min_sadness=min_sadness,
-                           t_min_sadness=t_min_sadness)
+                           max_sadness_image_path=max_sadness_image_path)
 
-@app.route('/show_frames', methods=['GET'])
-def show_frames():
-    # 保存されたフレームを取得する
-    frame_files = os.listdir(FRAMES_FOLDER)
-    frame_files.sort()
+def find_image_path(target_text):
+    frames_folder = '/Users/fumi/hackthon/static/frames'
+    for filename in os.listdir(frames_folder):
+        if target_text in filename:
+            return url_for('static', filename=f'frames/{filename}')
 
-    return render_template('show_frames.html', frame_files=frame_files)
+    # 該当のファイルが見つからない場合は空文字列を返す
+    return ''
 
 if __name__ == '__main__':
     app.run()
