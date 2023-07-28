@@ -116,6 +116,15 @@ def index():
                 if seconds_passed >= frame_count / fps:
                     break
 
+                # 最大値と最小値を表示する
+                print("Max Happiness:", max_happiness, "t =", t_max_happiness)
+                print("Min Happiness:", min_happiness, "t =", t_min_happiness)
+                print("Max Neutral:", max_neutral, "t =", t_max_neutral)
+                print("Min Neutral:", min_neutral, "t =", t_min_neutral)
+                print("Max Sadness:", max_sadness, "t =", t_max_sadness)
+                print("Min Sadness:", min_sadness, "t =", t_min_sadness)
+
+
             # 後処理としてキャプチャをリリースする
             cap.release()
             cv2.destroyAllWindows()

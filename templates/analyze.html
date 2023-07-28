@@ -1,15 +1,14 @@
-<!-- analyze.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="analyze.css"></head>
+  <link rel="stylesheet" href="analyze.css">
   <title>Analyzing now...</title>
+</head>
 <body>
-  <h1>Analyzing now...</h1>
+  <h1 id="analyzingText">Analyzing now<span id="dots"></span></h1>
   <div class="background-video">
     <video autoplay muted loop>
       <source src="background2.mp4" type="video/mp4">
@@ -37,6 +36,16 @@
     }
 
     const interval = setInterval(getEmotionData, 1000);
+
+    let dotsCount = 0;
+    const dotsElement = document.getElementById('dots');
+
+    function updateDots() {
+      dotsElement.innerText = '.'.repeat(dotsCount);
+      dotsCount = (dotsCount + 1) % 4;
+    }
+
+    setInterval(updateDots, 500); // 0.5秒ごとにupdateDots関数を呼び出す
   </script>
 </body>
 </html>
