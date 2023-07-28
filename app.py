@@ -2,9 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
 import base64
 import json
-import pprint
 import cv2
 import os
+import time
 
 app = Flask(__name__)
 
@@ -17,6 +17,18 @@ api_secret = "9ZLk4Teaxa0l1USu-EuCfJ_Sgv6YbdyN"  # ご自身の「API Secret」�
 UPLOAD_FOLDER = './uploaded_videos'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+# フレームを保存するディレクトリのパス
+FRAMES_FOLDER = './frames'
+if not os.path.exists(FRAMES_FOLDER):
+    os.makedirs(FRAMES_FOLDER)
+
+def clear_frames_folder():
+    # framesディレクトリ内の.jpgファイルを全て削除する
+    for file_name in os.listdir(FRAMES_FOLDER):
+        if file_name.endswith(".jpg"):
+            file_path = os.path.join(FRAMES_FOLDER, file_name)
+            os.remove(file_path)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -43,6 +55,9 @@ def index():
 def analyze():
     video_path = request.args.get('video_path')
 
+    # フレームを保存するディレクトリをクリアする
+    clear_frames_folder()
+
     # 解析処理を開始する
     # 動画の解析と結果の取得
     # 変数を初期化する
@@ -65,6 +80,7 @@ def analyze():
     cap = cv2.VideoCapture(video_path)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     seconds_passed = 0
+    frame_counter = 0
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -120,6 +136,11 @@ def analyze():
         # 経過時間を更新
         seconds_passed += 0.5
 
+        # 0.5秒ごとの画像データを保存する
+        frame_filename = f"{seconds_passed}.jpg"
+        frame_path = os.path.join(FRAMES_FOLDER, frame_filename)
+        cv2.imwrite(frame_path, frame)
+
         # 動画を全て認識したらループを抜ける
         if seconds_passed >= cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps:
             break
@@ -134,7 +155,7 @@ def analyze():
                             t_max_happiness=t_max_happiness,
                             min_happiness=min_happiness,
                             t_min_happiness=t_min_happiness,
-                            max_neutral=max_neutral,
+                                                       max_neutral=max_neutral,
                             t_max_neutral=t_max_neutral,
                             min_neutral=min_neutral,
                             t_min_neutral=t_min_neutral,
@@ -173,6 +194,14 @@ def result():
                            t_max_sadness=t_max_sadness,
                            min_sadness=min_sadness,
                            t_min_sadness=t_min_sadness)
+
+@app.route('/show_frames', methods=['GET'])
+def show_frames():
+    # 保存されたフレームを取得する
+    frame_files = os.listdir(FRAMES_FOLDER)
+    frame_files.sort()
+
+    return render_template('show_frames.html', frame_files=frame_files)
 
 if __name__ == '__main__':
     app.run()
