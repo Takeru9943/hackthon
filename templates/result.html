@@ -4,28 +4,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="result.css"> <!-- 必要ならば、このページ用のカスタムCSSを追加してください -->
-  <title>感情解析結果</title>
+  <title>Result [Face]</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='result.css') }}">
 </head>
 <body>
-  <h1 class="title">感情解析結果</h1>
-  <div class="result-container">
-    <h2 class="subtitle">最大・最小の感情値</h2>
-    <div class="emotion-data">
-      <p class="emotion">幸福度：</p>
-      <p class="value">最大値：{{ max_happiness }}（t = {{ t_max_happiness }}）</p>
-      <p class="value">最小値：{{ min_happiness }}（t = {{ t_min_happiness }}）</p>
-    </div>
-    <div class="emotion-data">
-      <p class="emotion">無表情：</p>
-      <p class="value">最大値：{{ max_neutral }}（t = {{ t_max_neutral }}）</p>
-      <p class="value">最小値：{{ min_neutral }}（t = {{ t_min_neutral }}）</p>
-    </div>
-    <div class="emotion-data">
-      <p class="emotion">悲しみ：</p>
-      <p class="value">最大値：{{ max_sadness }}（t = {{ t_max_sadness }}）</p>
-      <p class="value">最小値：{{ min_sadness }}（t = {{ t_min_sadness }}）</p>
-    </div>
+  <div class="background-video">
+    <video autoplay muted loop>
+      <source src="{{ url_for('static', filename='background1.mp4') }}" type="video/mp4">
+    </video>
   </div>
+  <h1 class="title">Result [Face]</h1>
+  <div class="image-container">
+    <img src="{{ url_for('static', filename='t_max_happiness.jpg') }}" alt="t_max_happiness">
+    <p>{{ t_max_happiness }}秒の時とてもいい笑顔です！</p>
+  </div>
+  <div class="image-container">
+    <img src="{{ url_for('static', filename='t_max_sadness.jpg') }}" alt="t_max_sadness">
+    <p>{{ t_max_sadness }}秒の時少し表情が硬いですね、、</p>
+  </div>
+  <button class="next-button">Next Result!</button>
 </body>
 </html>

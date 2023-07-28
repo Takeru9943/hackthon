@@ -38,7 +38,7 @@ body {
 }
 
 h1 {
-  font-family: 'Comic Sans MS', cursive;
+  font-family: 'Press Start 2P', cursive;
   font-size: 90px;
   color: #03b120;
   text-align: center;
@@ -50,7 +50,7 @@ h2 {
   font-size: 32px;
   color: #000000;
   text-align: center;
-  margin-top: 5vh; /* please upload your videoをさらに上に配置 */
+  margin-top: 5vh;
   margin-bottom: 40px;
 }
 
@@ -75,6 +75,7 @@ input[type="file"] {
 }
 
 input[type="submit"] {
+  font-family: 'Press Start 2P', cursive, 'Helvetica Neue', Arial, sans-serif; /* フォントを統一 */
   padding: 10px 20px;
   background-color: #000000;
   color: #fff;
