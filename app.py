@@ -133,7 +133,7 @@ def index():
             return render_template('index.html', max_happiness=max_happiness, t_max_happiness=t_max_happiness)
 
     # GETリクエストの場合やファイルが選択されていない場合は、ファイルアップロードフォームを表示する
-    return render_template('upload.html')
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run()
