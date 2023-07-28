@@ -155,7 +155,7 @@ def analyze():
                             t_max_happiness=t_max_happiness,
                             min_happiness=min_happiness,
                             t_min_happiness=t_min_happiness,
-                                                       max_neutral=max_neutral,
+                            max_neutral=max_neutral,
                             t_max_neutral=t_max_neutral,
                             min_neutral=min_neutral,
                             t_min_neutral=t_min_neutral,
