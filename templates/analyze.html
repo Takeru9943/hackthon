@@ -4,14 +4,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="analyze.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='analyze.css') }}">
   <title>Analyzing now...</title>
 </head>
 <body>
   <h1 id="analyzingText">Analyzing now<span id="dots"></span></h1>
   <div class="background-video">
     <video autoplay muted loop>
-      <source src="background2.mp4" type="video/mp4">
+      <source src="{{ url_for('static', filename='background2.mp4') }}" type="video/mp4">
     </video>
   </div>
   <div id="emotionResults">
