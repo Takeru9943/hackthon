@@ -1,17 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
+import openai
+import os
 import requests
 import base64
-import json
+import pprint
 import cv2
-import os
-import time
+import subprocess
+from pydub import AudioSegment
+from google.cloud import speech
+import json
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secret.json'
 
 app = Flask(__name__)
-
 # 表情認識用のAPI情報を設定する
 endpoint = 'https://api-us.faceplusplus.com'
-api_key = "SK7WRvwNYjP5cVHQqzKNcUEU1J7PzxX3"  # ご自身の「API Key」を入力する
-api_secret = "9ZLk4Teaxa0l1USu-EuCfJ_Sgv6YbdyN"  # ご自身の「API Secret」を入力する
+api_key = "my_api_key"  # ご自身の「API Key」を入力する
+api_secret = "my_api_secret"  # ご自身の「API Secret」を入力する
+
 
 # アップロードされた動画を保存するディレクトリのパス
 UPLOAD_FOLDER = './uploaded_videos'
@@ -29,6 +35,58 @@ def clear_frames_folder():
         if file_name.endswith(".jpg"):
             file_path = os.path.join(FRAMES_FOLDER, file_name)
             os.remove(file_path)
+
+
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+WAV_FOLDER = './wav'
+if not os.path.exists(WAV_FOLDER):
+    os.makedirs(WAV_FOLDER)
+
+CHUNK_FOLDER = './chunks'
+if not os.path.exists(CHUNK_FOLDER):
+    os.makedirs(CHUNK_FOLDER)
+
+TEMP_WAV_FILE = 'temp.wav'  # 一時的なWAVファイル名
+
+def convert_mp4_to_mono_wav(mp4_file_path, wav_file_path):
+    command = f'ffmpeg -y -i {mp4_file_path} -vn -ac 1 -ar 44100 -f wav {wav_file_path}'
+    subprocess.call(command, shell=True)
+
+def convert_stereo_to_mono_wav(stereo_wav_file_path, mono_wav_file_path):
+    audio = AudioSegment.from_file(stereo_wav_file_path)
+    audio = audio.set_channels(1)  # モノラル変換
+    audio.export(mono_wav_file_path, format="wav")
+
+def split_wav_to_chunks(wav_file_path, chunk_length_ms=50000):
+    audio = AudioSegment.from_file(wav_file_path)
+    chunks = [audio[i:i+chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
+    for i, chunk in enumerate(chunks):
+        chunk.export(os.path.join(CHUNK_FOLDER, f"chunk{i}.wav"), format="wav")
+
+def transcribe_file(content, lang='日本語'):
+    lang_code = {
+        '英語': 'en-US',
+        '日本語': 'ja-JP',
+    }
+    client = speech.SpeechClient()
+    audio = speech.RecognitionAudio(content=content)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=44100,
+        language_code=lang_code[lang]
+    )
+    response = client.recognize(config=config, audio=audio)
+    return response
+
+def get_valid_files(directory):
+    valid_files = []
+    for file_name in os.listdir(directory):
+        if not file_name.startswith('.DS_Store'):
+            valid_files.append(file_name)
+    return valid_files
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -55,9 +113,6 @@ def index():
 def analyze():
     video_path = request.args.get('video_path')
 
-    # フレームを保存するディレクトリをクリアする
-    clear_frames_folder()
-
     # 解析処理を開始する
     # 動画の解析と結果の取得
     # 変数を初期化する
@@ -80,7 +135,6 @@ def analyze():
     cap = cv2.VideoCapture(video_path)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     seconds_passed = 0
-    frame_counter = 0
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -133,6 +187,8 @@ def analyze():
         # 0.5秒待機する
         cv2.waitKey(500)
 
+
+
         # 経過時間を更新
         seconds_passed += 0.5
 
@@ -178,21 +234,98 @@ def result():
 
     # result.htmlに解析結果を表示する
     return render_template('result.html',
-                           max_happiness=max_happiness,
-                           t_max_happiness=t_max_happiness,
-                           max_happiness_image_path=max_happiness_image_path,
-                           max_sadness=max_sadness,
-                           t_max_sadness=t_max_sadness,
-                           max_sadness_image_path=max_sadness_image_path)
+                        max_happiness=max_happiness,
+                        t_max_happiness=t_max_happiness,
+                        max_happiness_image_path=max_happiness_image_path,
+                        max_sadness=max_sadness,
+                        t_max_sadness=t_max_sadness,
+                        max_sadness_image_path=max_sadness_image_path)
 
 def find_image_path(target_text):
-    frames_folder = '/Users/fumi/hackthon/static/frames'
+    frames_folder = '/Users/takaokayuu/Downloads/hackthon-main/static/frames'
     for filename in os.listdir(frames_folder):
         if target_text in filename:
             return url_for('static', filename=f'frames/{filename}')
 
-    # 該当のファイルが見つからない場合は空文字列を返す
-    return ''
 
-if __name__ == '__main__':
-    app.run()
+@app.route('/show_frames', methods=['GET'])
+def show_frames():
+    # 保存されたフレームを取得する
+    frame_files = os.listdir(FRAMES_FOLDER)
+    frame_files.sort()
+
+    return render_template('show_frames.html', frame_files=frame_files)
+
+@app.route('/convert', methods=['POST'])
+def convert():
+    uploaded_file = request.files['file']
+    if uploaded_file.filename != '':
+        mp4_file_path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename)
+        uploaded_file.save(mp4_file_path)
+        wav_file_path = os.path.join(WAV_FOLDER, os.path.splitext(uploaded_file.filename)[0] + '.wav')
+        convert_mp4_to_mono_wav(mp4_file_path, wav_file_path)
+
+        # 一時的なWAVファイルを作成する
+        temp_wav_file_path = os.path.join(WAV_FOLDER, TEMP_WAV_FILE)
+        convert_mp4_to_mono_wav(mp4_file_path, temp_wav_file_path)
+
+        return 'MP4 file has been converted to WAV successfully!', 200
+    return 'No file has been uploaded!', 400
+
+@app.route('/split', methods=['POST'])
+def split():
+    uploaded_file = request.files['file']
+    if uploaded_file.filename != '':
+        wav_file_path = os.path.join(WAV_FOLDER, uploaded_file.filename)
+        uploaded_file.save(wav_file_path)
+
+        # モノラルに変換したWAVファイルを作成する
+        mono_wav_file_path = os.path.join(WAV_FOLDER, 'mono_' + os.path.splitext(uploaded_file.filename)[0] + '.wav')
+        convert_stereo_to_mono_wav(wav_file_path, mono_wav_file_path)
+
+        split_wav_to_chunks(mono_wav_file_path)
+        return 'WAV file has been split into chunks successfully!', 200
+    return 'No file has been uploaded!', 400
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    # Set the OpenAI API key
+    openai.api_key = "my_open_ai_key"
+
+    lang = request.form.get('lang')
+    original_transcripts = []
+    for i, wav_file in enumerate(sorted(get_valid_files(CHUNK_FOLDER), key=lambda x: int(x[5:-4]))):
+        with open(os.path.join(CHUNK_FOLDER, wav_file), "rb") as f:
+            content = f.read()
+        response = transcribe_file(content, lang=lang)
+        for result in response.results:
+            original_transcript = result.alternatives[0].transcript
+            original_transcripts.append(original_transcript)
+
+    # Prepare the prompt for the ChatGPT API
+    original_text = " ".join(original_transcripts)
+
+    # Call the ChatGPT API
+    chat_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": original_text},
+            {"role": "assistant", "content": "面接にふさわしい言葉遣いや言い回しに変更し面接官の印象が良くなるようにしてください,文字数はあまり増やさないで"},
+        ],
+        temperature=0.8,
+    )
+
+    # Extract the improved text from the response
+    improved_transcript = chat_response['choices'][0]['message']['content'].strip()
+
+    # Redirect to result2.html with the transcripts
+    return render_template('result2.html', original=original_text, improved=improved_transcript)
+
+
+
+
+
+
+if __name__ =='__main__':
+    app.run(debug=True)
